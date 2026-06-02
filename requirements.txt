@@ -1,0 +1,19 @@
+# Core
+requests>=2.31
+PyYAML>=6.0
+python-dotenv>=1.0
+
+# LLM (optional at runtime — template mode works without a key)
+anthropic>=0.40
+
+# Arabic text + rendering
+Pillow>=10.2            # built with libraqm/HarfBuzz in standard wheels (best Arabic shaping)
+arabic-reshaper>=3.0    # fallback shaping when raqm is unavailable
+python-bidi>=0.4        # fallback bidi ordering
+
+# Video (bundled static ffmpeg — no system ffmpeg needed)
+imageio-ffmpeg>=0.5
+
+# Text-to-speech (free; falls back to timed silence offline)
+edge-tts>=6.1
+gTTS>=2.5
