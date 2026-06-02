@@ -1,0 +1,44 @@
+name: Generate research TikTok
+
+# Run from the GitHub app/website (Run workflow), or automatically on a schedule.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 6 * * *"   # daily at 06:00 UTC — change as you like (only runs on the default branch)
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate the video
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          IEEE_API_KEY: ${{ secrets.IEEE_API_KEY }}
+        run: python main.py run
+
+      - name: Upload the video + caption (download this on your iPad)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-video
+          path: |
+            output/**/final_video.mp4
+            output/**/thumbnail.png
+            output/**/caption.txt
+            output/**/script_ar.txt
+            output/**/fact_check.json
+          if-no-files-found: warn
+          retention-days: 14
