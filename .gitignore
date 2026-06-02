@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Generated run artifacts (keep the folder, ignore the runs)
+output/*/
+!output/.gitkeep
+
+# Fonts are fetched on demand (OFL) — keep the folder, ignore the binaries
+assets/fonts/*.ttf
+!assets/fonts/.gitkeep
+
+# OS / editor
+.DS_Store
+*.swp
