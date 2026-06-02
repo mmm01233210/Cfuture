@@ -1,0 +1,90 @@
+# arabic-research-tiktok-agent — main configuration
+# Secrets (API keys, tokens) live in environment variables / .env, never here.
+
+project: arabic-research-tiktok-agent
+
+# Active research fields for discovery (keys from arts/knowledge.py):
+#   ai | telecom | quantum | cybersecurity | robotics | smart_cities | emerging_tech
+fields:
+  - ai
+  - quantum
+  - robotics
+
+discovery:
+  sources: [arxiv, semantic_scholar, crossref]   # tried in order; failures are skipped
+  per_field_results: 15        # candidates fetched per field per source
+  max_age_days: 45             # ignore papers older than this
+  mailto: mmm01233210@gmail.com  # polite identifier sent to APIs (Crossref/arXiv)
+  allow_sample_fallback: true  # use samples/sample_papers.json when no live results
+
+scoring:
+  threshold: 75                # a paper must reach this (out of 100) to be produced
+
+llm:
+  provider: anthropic          # anthropic | template   (falls back to template w/o API key)
+  model: claude-opus-4-8       # most capable; set claude-sonnet-4-6 to cut cost on frequent runs
+  thinking: true               # adaptive thinking (Opus 4.6+/Sonnet 4.6) for better reasoning
+  max_tokens: 2200
+
+script:
+  reading_age: 10              # explain so a 10-year-old understands
+  num_scenes: 9                # 7..9 recommended
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  min_duration: 45             # seconds
+  max_duration: 60             # seconds
+  min_scene_seconds: 3.5
+  motion: true                 # subtle ken-burns zoom on each scene
+  background: ai_image         # ai_image (AI photo + Ken Burns) | ai_video (animated AI clips) | procedural | graphic
+  bg_model: flux               # Pollinations model for ai_image (keyless); needs internet
+  bg_scrim: 0.30               # darkening over the photo for caption legibility (0..1)
+  # Animated AI video backgrounds (set background: ai_video) — needs a provider key in .env
+  video_provider: replicate    # replicate (REPLICATE_API_TOKEN) | fal (FAL_KEY)
+  video_model: ""              # blank = provider default (replicate: minimax/video-01)
+  video_image_key: ""          # blank = provider default image field
+  video_duration: 5            # seconds requested from the provider per clip
+  video_timeout: 300           # max seconds to wait per clip
+  music: false                 # mix a soft background track if a file is provided
+  music_path: ""               # e.g. assets/music/soft.mp3
+  music_volume: 0.08
+
+voiceover:
+  provider: edge               # edge (edge-tts) | gtts | none (silent, subtitles only)
+  voice: ar-SA-HamedNeural     # calm male; try ar-EG-SalmaNeural / ar-SA-ZariyahNeural
+  rate: "-6%"                  # slightly slower for clarity (edge-tts only)
+
+publish:
+  mode: export                 # export (save to output/) | tiktok_api (Content Posting API)
+  tiktok_privacy: SELF_ONLY    # draft-safe default when using the API
+
+schedule:
+  interval_minutes: 60         # how often `python main.py schedule` runs the pipeline
+
+output_dir: output
+
+fonts:
+  regular: assets/fonts/Tajawal-Regular.ttf
+  bold: assets/fonts/Tajawal-Bold.ttf
+  black: assets/fonts/Tajawal-ExtraBold.ttf
+  header: assets/fonts/Amiri-Bold.ttf
+
+# Visual theme — modern "neon card" look (dark gradient + per-field accent)
+theme:
+  bg_top: "#0b1224"            # gradient top (deep navy)
+  bg_bottom: "#241844"         # gradient bottom (violet)
+  ink: "#ffffff"
+  muted: "#9aa6c2"
+
+# Neon accent colour per field (drives glow, kicker, highlights)
+accents:
+  ai: "#22d3ee"                # cyan
+  telecom: "#34d399"           # green
+  quantum: "#a78bfa"           # purple
+  cybersecurity: "#fb7185"     # rose
+  robotics: "#f59e0b"          # amber
+  smart_cities: "#38bdf8"      # sky
+  emerging_tech: "#e879f9"     # magenta
+  default: "#22d3ee"
