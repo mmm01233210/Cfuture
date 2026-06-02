@@ -1,0 +1,53 @@
+[
+  {
+    "title": "Self-Supervised World Models for Sample-Efficient Robot Learning",
+    "abstract": "Reinforcement learning agents typically require millions of interactions to master a new task, which is impractical for physical robots. We introduce a self-supervised world model that learns a compact predictive representation of the environment directly from unlabeled sensory streams. By imagining future outcomes inside this learned model, the agent practices new skills without touching the real robot, and only the most promising behaviours are tried on hardware. Across a suite of manipulation and locomotion benchmarks, our approach reaches the same performance as strong baselines while using roughly ten times fewer real-world interactions. We further show that the learned representation transfers to previously unseen tasks with minimal fine-tuning. These results suggest that learned world models can substantially lower the data cost of training capable robots, although our experiments remain in simulation and controlled lab settings.",
+    "authors": ["Sample Author A", "Sample Author B", "Sample Author C"],
+    "year": 2026,
+    "institution": null,
+    "source": "arxiv",
+    "doi": "10.0000/sample.0001",
+    "url": "https://arxiv.org/abs/0000.00001",
+    "field": "ai",
+    "publication_date": "2026-05-20",
+    "open_access": true,
+    "license": "arXiv (sample fixture)",
+    "pdf_url": "https://arxiv.org/pdf/0000.00001",
+    "paper_id": "sample-0001",
+    "sample": true
+  },
+  {
+    "title": "Error-Mitigated Variational Circuits for Near-Term Combinatorial Optimization",
+    "abstract": "Current quantum processors are noisy, which limits how reliably they can solve optimization problems. We propose a lightweight error-mitigation scheme tailored to variational quantum circuits that estimates and subtracts the dominant noise contribution at measurement time, without requiring additional qubits. On small combinatorial optimization instances run on a simulated noisy device, the method recovers a large fraction of the lost solution quality and produces answers competitive with idealized noiseless circuits. The technique is inexpensive and integrates with existing variational solvers. We emphasize that the demonstrations are limited to modest problem sizes on simulated hardware, and scaling behaviour on larger real devices remains an open question.",
+    "authors": ["Sample Author D", "Sample Author E"],
+    "year": 2026,
+    "institution": null,
+    "source": "arxiv",
+    "doi": "10.0000/sample.0002",
+    "url": "https://arxiv.org/abs/0000.00002",
+    "field": "quantum",
+    "publication_date": "2026-04-11",
+    "open_access": true,
+    "license": "arXiv (sample fixture)",
+    "pdf_url": "https://arxiv.org/pdf/0000.00002",
+    "paper_id": "sample-0002",
+    "sample": true
+  },
+  {
+    "title": "Tactile-Driven Dexterous Manipulation with Learned Contact Models",
+    "abstract": "Robots struggle to handle delicate objects because they cannot feel contact the way humans do. We equip a multi-fingered hand with dense tactile sensors and train a contact model that predicts how an object will move when squeezed or nudged. A controller then uses these predictions to grasp and reorient fragile items such as eggs and thin cards without crushing them. In laboratory trials the system succeeds on a range of everyday objects and adapts to shapes it has not seen before. The work is an early research prototype: trials are limited to a single hand in a controlled setup, and robustness in unstructured environments is left to future work.",
+    "authors": ["Sample Author F", "Sample Author G", "Sample Author H"],
+    "year": 2026,
+    "institution": null,
+    "source": "arxiv",
+    "doi": "10.0000/sample.0003",
+    "url": "https://arxiv.org/abs/0000.00003",
+    "field": "robotics",
+    "publication_date": "2026-05-02",
+    "open_access": true,
+    "license": "arXiv (sample fixture)",
+    "pdf_url": "https://arxiv.org/pdf/0000.00003",
+    "paper_id": "sample-0003",
+    "sample": true
+  }
+]
