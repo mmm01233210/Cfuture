@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from .__init__ import __version__
+from . import memory
 from .config import Config
 from .agents import paper_fetcher, scorer, script_generator, fact_checker
 from .agents import voiceover, video_renderer, thumbnail, tiktok_uploader
@@ -40,6 +41,9 @@ def run_once(cfg: Optional[Config] = None) -> dict:
     if not papers:
         log.warning("no papers discovered — nothing to do")
         return {"status": "no_papers"}
+
+    # remember-and-skip: never produce the same paper twice
+    papers = memory.filter_unused(papers)
 
     # 2) scoring + selection
     paper, score = scorer.select_best(papers, llm, cfg)
@@ -81,6 +85,9 @@ def run_once(cfg: Optional[Config] = None) -> dict:
     write_json(run_dir / "storyboard.json", to_jsonable(script.storyboard))
     write_json(run_dir / "fact_check.json", to_jsonable(report))
     write_text(run_dir / "caption.txt", caption_text)
+
+    # record so this paper is never produced again
+    memory.mark_used(paper)
 
     durations = voiceover.fit_durations(scene_audio, cfg)
     run_summary = {

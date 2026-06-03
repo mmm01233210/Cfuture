@@ -24,19 +24,19 @@ llm:
   provider: anthropic          # anthropic | template   (falls back to template w/o API key)
   model: claude-opus-4-8       # most capable; set claude-sonnet-4-6 to cut cost on frequent runs
   thinking: true               # adaptive thinking (Opus 4.6+/Sonnet 4.6) for better reasoning
-  max_tokens: 2200
+  max_tokens: 4000             # room for a richer, longer story-style script
 
 script:
   reading_age: 10              # explain so a 10-year-old understands
-  num_scenes: 9                # 7..9 recommended
+  num_scenes: 12               # 10..14 short story beats (richer, more info)
 
 video:
   width: 1080
   height: 1920
   fps: 30
-  min_duration: 45             # seconds
-  max_duration: 60             # seconds
-  min_scene_seconds: 3.5
+  min_duration: 55             # seconds (richer script => slightly longer video)
+  max_duration: 95             # seconds
+  min_scene_seconds: 3.0
   motion: true                 # subtle ken-burns zoom on each scene
   background: ai_image         # ai_image (AI photo + Ken Burns) | ai_video (animated AI clips) | procedural | graphic
   bg_model: flux               # Pollinations model for ai_image (keyless); needs internet
