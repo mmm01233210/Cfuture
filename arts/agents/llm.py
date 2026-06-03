@@ -93,6 +93,8 @@ class LLM:
         return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
 
     def _gemini(self, system: str, user: str, max_tokens: int, json_mode: bool) -> str:
+        import time
+
         import requests
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
@@ -104,7 +106,17 @@ class LLM:
             "contents": [{"role": "user", "parts": [{"text": user}]}],
             "generationConfig": gen_cfg,
         }
-        r = requests.post(url, params={"key": self._gemini_key}, json=body, timeout=120)
+        # retry on rate-limit / transient errors (free tier is rate-limited)
+        r = None
+        for attempt in range(5):
+            r = requests.post(url, params={"key": self._gemini_key}, json=body, timeout=120)
+            if r.status_code in (429, 500, 503):
+                ra = r.headers.get("retry-after")
+                wait = int(ra) if (ra and ra.isdigit()) else min(45, 6 * (attempt + 1))
+                log.warning("Gemini HTTP %s — waiting %ss then retry (%d/5)", r.status_code, wait, attempt + 1)
+                time.sleep(wait)
+                continue
+            break
         r.raise_for_status()
         data = r.json()
         cand = (data.get("candidates") or [{}])[0]

@@ -109,8 +109,10 @@ def select_best(papers: list[Paper], llm: LLM, cfg: Config) -> tuple[Optional[Pa
     ranked = sorted(papers, key=lambda p: heuristic_score(p).total, reverse=True)
     best_paper, best_score = ranked[0], heuristic_score(ranked[0])
 
-    if llm.available:
-        top_k = int(cfg.get("scoring.llm_rerank_top", 5))
+    # LLM re-scoring is optional (off by default) to save API calls / rate limits;
+    # the heuristic already picks a strong recent paper.
+    if llm.available and bool(cfg.get("scoring.use_llm", False)):
+        top_k = int(cfg.get("scoring.llm_rerank_top", 3))
         refined: list[tuple[Paper, Score]] = []
         for p in ranked[:top_k]:
             try:

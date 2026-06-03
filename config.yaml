@@ -19,6 +19,8 @@ discovery:
 
 scoring:
   threshold: 75                # a paper must reach this (out of 100) to be produced
+  use_llm: false               # rank by fast heuristic; true also scores with the model (more API calls)
+  llm_rerank_top: 3            # how many top papers the model re-scores when use_llm is true
 
 llm:
   provider: gemini             # anthropic (Claude) | gemini (Google) | template
