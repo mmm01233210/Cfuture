@@ -21,9 +21,10 @@ scoring:
   threshold: 75                # a paper must reach this (out of 100) to be produced
 
 llm:
-  provider: anthropic          # anthropic | template   (falls back to template w/o API key)
-  model: claude-opus-4-8       # most capable; set claude-sonnet-4-6 to cut cost on frequent runs
-  thinking: true               # adaptive thinking (Opus 4.6+/Sonnet 4.6) for better reasoning
+  provider: anthropic          # anthropic (Claude) | gemini (Google) | template
+  model: claude-opus-4-8       # Claude model (used when provider: anthropic)
+  gemini_model: gemini-2.0-flash   # Gemini model (used when provider: gemini)
+  thinking: true               # adaptive thinking (Claude Opus 4.6+/Sonnet 4.6)
   max_tokens: 4000             # room for a richer, longer story-style script
 
 script:

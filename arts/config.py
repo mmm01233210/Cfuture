@@ -71,10 +71,16 @@ class Config:
         return os.getenv("ANTHROPIC_API_KEY")
 
     @property
+    def gemini_api_key(self) -> str | None:
+        return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+
+    @property
     def llm_provider(self) -> str:
-        # 'anthropic' only takes effect when a key is actually present
+        # a provider only takes effect when its key is actually present
         prov = str(self.get("llm.provider", "anthropic")).lower()
         if prov == "anthropic" and not self.anthropic_api_key:
+            return "template"
+        if prov == "gemini" and not self.gemini_api_key:
             return "template"
         return prov
 

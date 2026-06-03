@@ -1,19 +1,16 @@
-"""Thin Claude (Anthropic) wrapper used by the reasoning agents.
+"""LLM wrapper used by the reasoning agents — supports Claude or Gemini.
 
-Design goals:
-  * One place that talks to the model, so every agent shares caching / retry /
-    parsing behaviour.
-  * Graceful degradation: when no ``ANTHROPIC_API_KEY`` is set the wrapper
-    reports ``available == False`` and each agent falls back to template mode,
-    so the whole pipeline still runs end-to-end offline.
+Pick the provider in ``config.yaml`` (``llm.provider``):
+  * ``anthropic`` — Claude (key: ANTHROPIC_API_KEY)
+  * ``gemini``    — Google Gemini (key: GEMINI_API_KEY or GOOGLE_API_KEY)
+  * ``template``  — no model; agents use their offline template fallback
 
-Notes on the request shape (Claude Opus 4.8 / Sonnet 4.6):
-  * Stable, reusable instructions go in ``system`` with ``cache_control`` so
-    repeated runs can hit the prompt cache; the volatile paper text goes in the
-    user turn after it.
-  * Adaptive thinking is used for the quality-sensitive reasoning steps.
-  * ``temperature`` / ``budget_tokens`` are intentionally never sent — both are
-    removed on Opus 4.8/4.7 and would 400.
+Graceful degradation: if the chosen provider has no key, the wrapper reports
+``available == False`` and every agent falls back to template mode, so the whole
+pipeline still runs end-to-end offline.
+
+Both providers expose the same ``complete_text`` / ``complete_json`` interface so
+the agents don't care which model is behind them.
 """
 from __future__ import annotations
 
@@ -26,29 +23,40 @@ from ..utils import get_logger
 
 log = get_logger("llm")
 
-# Models that accept adaptive thinking; keep conservative to avoid 400s.
+# Claude models that accept adaptive thinking; conservative to avoid 400s.
 _ADAPTIVE_THINKING_MODELS = ("claude-opus-4-8", "claude-opus-4-7", "claude-opus-4-6", "claude-sonnet-4-6")
+_GEMINI_DEFAULT = "gemini-2.0-flash"
 
 
 class LLM:
     def __init__(self, cfg: Config):
         self.cfg = cfg
+        self.provider = cfg.llm_provider
         self.model: str = cfg.get("llm.model", "claude-opus-4-8")
-        self.max_tokens: int = int(cfg.get("llm.max_tokens", 2200))
+        self.max_tokens: int = int(cfg.get("llm.max_tokens", 4000))
         self.use_thinking: bool = bool(cfg.get("llm.thinking", True))
         self._client = None
+        self._gemini_key: Optional[str] = None
         self._available = False
-        if cfg.llm_provider == "anthropic" and cfg.anthropic_api_key:
+
+        if self.provider == "anthropic":
             try:
                 import anthropic
 
                 self._client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY
                 self._available = True
                 log.info("LLM ready: Anthropic %s (thinking=%s)", self.model, self.use_thinking)
-            except Exception as e:  # pragma: no cover - import/runtime guard
+            except Exception as e:  # pragma: no cover
                 log.warning("Anthropic client unavailable (%s) — using template mode", e)
+        elif self.provider == "gemini":
+            self._gemini_key = cfg.gemini_api_key
+            if "gemini" not in self.model.lower():
+                self.model = cfg.get("llm.gemini_model", _GEMINI_DEFAULT)
+            self._available = bool(self._gemini_key)
+            log.info("LLM ready: Gemini %s", self.model) if self._available else \
+                log.info("No Gemini key — running in template mode")
         else:
-            log.info("No ANTHROPIC_API_KEY — running in template mode")
+            log.info("No LLM key — running in template mode")
 
     @property
     def available(self) -> bool:
@@ -60,8 +68,7 @@ class LLM:
             return {"type": "adaptive"}
         return None
 
-    def _call(self, system: str, user: str, max_tokens: int, allow_thinking: bool) -> str:
-        """Single Messages API call, returning the concatenated text output."""
+    def _anthropic(self, system: str, user: str, max_tokens: int, allow_thinking: bool) -> str:
         import anthropic
 
         system_blocks = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
@@ -74,11 +81,9 @@ class LLM:
         thinking = self._thinking_param() if allow_thinking else None
         if thinking:
             kwargs["thinking"] = thinking
-
         try:
             resp = self._client.messages.create(**kwargs)
         except anthropic.BadRequestError as e:
-            # Most likely an unsupported thinking/effort param for this model.
             if thinking:
                 log.warning("BadRequest with thinking (%s); retrying without it", e)
                 kwargs.pop("thinking", None)
@@ -87,10 +92,34 @@ class LLM:
                 raise
         return "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
 
+    def _gemini(self, system: str, user: str, max_tokens: int, json_mode: bool) -> str:
+        import requests
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent"
+        gen_cfg: dict[str, Any] = {"maxOutputTokens": max_tokens, "temperature": 0.8}
+        if json_mode:
+            gen_cfg["responseMimeType"] = "application/json"
+        body = {
+            "systemInstruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": user}]}],
+            "generationConfig": gen_cfg,
+        }
+        r = requests.post(url, params={"key": self._gemini_key}, json=body, timeout=120)
+        r.raise_for_status()
+        data = r.json()
+        cand = (data.get("candidates") or [{}])[0]
+        parts = (cand.get("content") or {}).get("parts") or []
+        return "".join(p.get("text", "") for p in parts).strip()
+
+    def _call(self, system: str, user: str, max_tokens: int, allow_thinking: bool, json_mode: bool) -> str:
+        if self.provider == "gemini":
+            return self._gemini(system, user, max_tokens, json_mode)
+        return self._anthropic(system, user, max_tokens, allow_thinking)
+
     # ------------------------------------------------------------------ #
     def complete_text(self, system: str, user: str, max_tokens: Optional[int] = None,
                       allow_thinking: bool = False) -> str:
-        return self._call(system, user, max_tokens or self.max_tokens, allow_thinking)
+        return self._call(system, user, max_tokens or self.max_tokens, allow_thinking, json_mode=False)
 
     def complete_json(self, system: str, user: str, max_tokens: Optional[int] = None,
                       allow_thinking: bool = True) -> dict:
@@ -99,7 +128,7 @@ class LLM:
             "\n\nReturn ONLY a single valid JSON object. No markdown fences, no prose "
             "before or after the JSON."
         )
-        raw = self._call(sys, user, max_tokens or self.max_tokens, allow_thinking)
+        raw = self._call(sys, user, max_tokens or self.max_tokens, allow_thinking, json_mode=True)
         return _extract_json(raw)
 
 
@@ -107,7 +136,6 @@ class LLM:
 def _extract_json(text: str) -> dict:
     """Best-effort extraction of one JSON object from a model reply."""
     text = text.strip()
-    # Strip ```json ... ``` fences if present.
     fence = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL)
     if fence:
         text = fence.group(1).strip()
@@ -115,7 +143,6 @@ def _extract_json(text: str) -> dict:
         return json.loads(text)
     except json.JSONDecodeError:
         pass
-    # Fall back to the first balanced {...} span.
     start = text.find("{")
     if start != -1:
         depth = 0
