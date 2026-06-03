@@ -117,6 +117,8 @@ class LLM:
                 time.sleep(wait)
                 continue
             break
+        if r is not None and not r.ok:
+            log.warning("Gemini error %s: %s", r.status_code, r.text[:300])
         r.raise_for_status()
         data = r.json()
         cand = (data.get("candidates") or [{}])[0]
