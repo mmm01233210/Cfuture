@@ -25,7 +25,7 @@ scoring:
 llm:
   provider: gemini             # anthropic (Claude) | gemini (Google) | template
   model: claude-opus-4-8       # Claude model (used when provider: anthropic)
-  gemini_model: gemini-2.0-flash   # Gemini model (used when provider: gemini)
+  gemini_model: gemini-2.5-flash   # Gemini model (used when provider: gemini)
   thinking: true               # adaptive thinking (Claude Opus 4.6+/Sonnet 4.6)
   max_tokens: 4000             # room for a richer, longer story-style script
 
